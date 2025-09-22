@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI助手 - 登录/注册</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+        }
+        input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .error {
+            color: red;
+            margin-top: 5px;
+            font-size: 14px;
+        }
+        .success {
+            color: green;
+            margin-top: 5px;
+            font-size: 14px;
+        }
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+        }
+        .tab {
+            flex: 1;
+            padding: 10px;
+            text-align: center;
+            cursor: pointer;
+            border-bottom: 2px solid #ddd;
+        }
+        .tab.active {
+            border-bottom-color: #007bff;
+            color: #007bff;
+        }
+        .form-container {
+            display: none;
+        }
+        .form-container.active {
+            display: block;
+        }
+        .user-info {
+            display: none;
+            text-align: center;
+        }
+        .user-info.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="auth-forms">
+            <div class="tabs">
+                <div class="tab active" onclick="switchTab('login')">登录</div>
+                <div class="tab" onclick="switchTab('register')">注册</div>
+            </div>
+            
+            <div id="login-form" class="form-container active">
+                <div class="form-group">
+                    <label for="login-phone">手机号</label>
+                    <input type="tel" id="login-phone" placeholder="请输入手机号">
+                </div>
+                <div class="form-group">
+                    <label for="login-password">密码</label>
+                    <input type="password" id="login-password" placeholder="请输入密码">
+                </div>
+                <button onclick="login()">登录</button>
+                <div id="login-error" class="error"></div>
+            </div>
+            
+            <div id="register-form" class="form-container">
+                <div class="form-group">
+                    <label for="register-phone">手机号</label>
+                    <input type="tel" id="register-phone" placeholder="请输入手机号">
+                </div>
+                <div class="form-group">
+                    <label for="register-password">密码</label>
+                    <input type="password" id="register-password" placeholder="请输入密码">
+                </div>
+                <button onclick="register()">注册</button>
+                <div id="register-error" class="error"></div>
+            </div>
+        </div>
+        
+        <div id="user-info" class="user-info">
+            <h3>欢迎使用AI助手</h3>
+            <p>手机号: <span id="user-phone"></span></p>
+            <p>今日剩余查询次数: <span id="remaining-queries"></span></p>
+            <button onclick="logout()">退出登录</button>
+        </div>
+    </div>
+
+    <script>
+        // 切换登录/注册表单
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.form-container').forEach(f => f.classList.remove('active'));
+            
+            if (tab === 'login') {
+                document.querySelector('.tab:first-child').classList.add('active');
+                document.getElementById('login-form').classList.add('active');
+            } else {
+                document.querySelector('.tab:last-child').classList.add('active');
+                document.getElementById('register-form').classList.add('active');
+            }
+        }
+
+        // 注册功能
+        async function register() {
+            const phone = document.getElementById('register-phone').value;
+            const password = document.getElementById('register-password').value;
+            const errorDiv = document.getElementById('register-error');
+            
+            try {
+                const response = await fetch('/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({ phone, password })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    errorDiv.textContent = '';
+                    errorDiv.className = 'success';
+                    errorDiv.textContent = '注册成功，请登录';
+                    switchTab('login');
+                } else {
+                    errorDiv.textContent = data.error;
+                }
+            } catch (error) {
+                errorDiv.textContent = '注册失败，请重试';
+            }
+        }
+
+        // 登录功能
+        async function login() {
+            const phone = document.getElementById('login-phone').value;
+            const password = document.getElementById('login-password').value;
+            const errorDiv = document.getElementById('login-error');
+            
+            try {
+                const response = await fetch('/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({ phone, password })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    errorDiv.textContent = '';
+                    // 更新用户信息
+                    document.getElementById('user-phone').textContent = data.user.phone;
+                    document.getElementById('remaining-queries').textContent = data.user.remaining_queries;
+                    // 登录成功后直接跳转到聊天页面
+                    window.location.href = '/chat';
+                } else {
+                    errorDiv.textContent = data.error;
+                }
+            } catch (error) {
+                errorDiv.textContent = '登录失败，请重试';
+            }
+        }
+
+        // 检查用户状态
+        async function checkUserStatus() {
+            try {
+                const response = await fetch('/user/status', {
+                    credentials: 'include'
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('auth-forms').style.display = 'none';
+                    document.getElementById('user-info').classList.add('active');
+                    document.getElementById('user-phone').textContent = data.phone;
+                    document.getElementById('remaining-queries').textContent = data.remaining_queries;
+                    // 如果在登录页面且已登录，则重定向到聊天页面
+                    if (window.location.pathname === '/') {
+                        window.location.href = '/chat';
+                    }
+                } else {
+                    document.getElementById('auth-forms').style.display = 'block';
+                    document.getElementById('user-info').classList.remove('active');
+                }
+            } catch (error) {
+                console.error('获取用户状态失败:', error);
+            }
+        }
+
+        // 退出登录
+        async function logout() {
+            try {
+                const response = await fetch('/logout', {
+                    credentials: 'include'
+                });
+                if (response.ok) {
+                    document.getElementById('auth-forms').style.display = 'block';
+                    document.getElementById('user-info').classList.remove('active');
+                    document.getElementById('login-phone').value = '';
+                    document.getElementById('login-password').value = '';
+                    // 退出登录后重定向到首页
+                    window.location.href = '/';
+                }
+            } catch (error) {
+                console.error('退出登录失败:', error);
+            }
+        }
+
+        // 页面加载时检查登录状态
+        window.onload = checkUserStatus;
+    </script>
+</body>
+</html> 

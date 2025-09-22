@@ -1,0 +1,75 @@
+{
+  "campaign": {
+    "name": "Spring Sale Campaign",
+    "type": "Search",
+    "budget": 1000,
+    "start_date": "2024-03-01",
+    "end_date": "2024-03-31",
+    "targeting": {
+      "locations": [
+        "United States",
+        "Canada"
+      ],
+      "languages": [
+        "English",
+        "French"
+      ],
+      "devices": [
+        "Desktop",
+        "Mobile"
+      ],
+      "networks": [
+        "Search Network"
+      ]
+    }
+  },
+  "ad_groups": [
+    {
+      "name": "Ad Group 1 - Electronics",
+      "bid": 1.5,
+      "keywords": [
+        "electronics",
+        "gadgets"
+      ],
+      "negative_keywords": [
+        "used",
+        "refurbished"
+      ],
+      "ads": [
+        {
+          "type": "Text Ad",
+          "headlines": [
+            "Get 20% Off on Electronics",
+            "Spring Sale - Limited Time",
+            "Shop Now"
+          ],
+          "descriptions": [
+            "Free shipping on orders over $50",
+            "Quality products guaranteed"
+          ],
+          "final_url": "https://www.example.com/electronics",
+          "display_url": "www.example.com",
+          "extensions": [
+            {
+              "type": "Call Extension",
+              "text": "Call us now: 123-456-7890"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "audiences": [
+    {
+      "type": "In-market Audience",
+      "name": "Tech Enthusiasts",
+      "description": "Users interested in the latest technology and gadgets"
+    }
+  ],
+  "conversion_tracking": {
+    "type": "Purchase",
+    "name": "Completed Purchase",
+    "value": 100,
+    "count": "Once"
+  }
+}

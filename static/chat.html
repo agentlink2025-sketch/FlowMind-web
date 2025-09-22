@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI助手 - 聊天</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            line-height: 1.6;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+
+        .chat-container {
+            max-width: 800px;
+            margin: 20px auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .chat-header {
+            background: #4a90e2;
+            color: white;
+            padding: 15px;
+            text-align: center;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .user-info {
+            font-size: 14px;
+            text-align: right;
+        }
+
+        .chat-messages {
+            height: 500px;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .message {
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .message.user {
+            align-items: flex-end;
+        }
+
+        .message-content {
+            max-width: 85%;
+            padding: 15px;
+            border-radius: 15px;
+            margin: 5px 0;
+            white-space: pre-wrap;
+        }
+
+        .user .message-content {
+            background: #4a90e2;
+            color: white;
+        }
+
+        .assistant .message-content {
+            background: #f8f9fa;
+            color: #333;
+            border: 1px solid #e9ecef;
+        }
+
+        .chat-input {
+            padding: 20px;
+            border-top: 1px solid #eee;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        #message-input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            resize: none;
+            min-height: 40px;
+            max-height: 120px;
+        }
+
+        #send-button {
+            padding: 10px 20px;
+            background: #4a90e2;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        #send-button:hover {
+            background: #357abd;
+        }
+
+        #send-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .typing-indicator {
+            display: none;
+            padding: 10px 15px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            margin: 5px 0;
+            max-width: 85%;
+            border: 1px solid #e9ecef;
+        }
+
+        .typing-indicator span {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: #666;
+            border-radius: 50%;
+            margin-right: 5px;
+            animation: typing 1s infinite;
+        }
+
+        .typing-indicator span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-indicator span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
+        .file-status {
+            color: #4a90e2;
+            font-size: 0.95em;
+            margin-left: 8px;
+        }
+
+        .logout-button {
+            padding: 5px 10px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .logout-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        #adConfigSidebar {
+            display: none;
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 400px;
+            height: 100vh;
+            background: white;
+            z-index: 1000;
+            box-shadow: -3px 0 16px rgba(0,0,0,0.13);
+            overflow: auto;
+            transition: transform .35s cubic-bezier(.4,0,.2,1);
+            transform: translateX(100%);
+        }
+        #adConfigSidebar.open {
+            display: block;
+            transform: translateX(0);
+        }
+        #adConfigSidebar button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 18px;
+            background: none;
+            border: none;
+            color: #888;
+            cursor: pointer;
+        }
+        #adConfigSidebar button:hover {
+            color: #4a90e2;
+        }
+        #adConfigSidebar h2 {
+            margin: 18px 20px 6px 20px;
+        }
+        #adConfigJsonSidebarView {
+            background: #f8f9fa;
+            padding: 15px 18px;
+            border-radius: 8px;
+            margin: 10px 20px 20px 20px;
+            max-height: 80vh;
+            overflow: auto;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <h1>AI助手</h1>
+            <div class="user-info">
+                <span id="user-phone"></span>
+                <span id="remaining-queries"></span>
+                <button class="logout-button" onclick="logout()">退出登录</button>
+            </div>
+        </div>
+        <div class="chat-messages" id="chat-messages">
+            <div class="message assistant">
+                <div class="message-content">
+                    你好！我是 AI 助手，很高兴为你服务。有什么我可以帮你的吗？
+
+我可以帮你：
+- 广告投放数据分析
+- 内容营销数据分析
+- 社交媒体数据分析
+- 营销优化方案
+- 预算优化
+- 提供创意建议
+
+请随时向我提问！
+                </div>
+            </div>
+            <div class="typing-indicator" id="typing-indicator">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+        <button id="showAdConfigBtn" style="position:absolute;top:30px;right:30px;z-index:10;display:none;">广告参数json</button>
+        <div id="adConfigModal" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.4);z-index:1000;align-items:center;justify-content:center;">
+            <div style="background:white;padding:30px 20px 20px 20px;border-radius:10px;max-width:700px;max-height:80vh;overflow:auto;position:relative;">
+                <button id="closeAdConfigModal" style="position:absolute;top:10px;right:10px;font-size:18px;">×</button>
+                <h2 style="margin-bottom:10px;">广告参数json</h2>
+                <pre id="adConfigJsonView" style="background:#f8f9fa;padding:15px;border-radius:8px;max-height:60vh;overflow:auto;font-size:14px;"></pre>
+            </div>
+        </div>
+        <div class="chat-input">
+            <input type="file" id="chatExcelFile" name="file" accept=".xlsx,.csv" style="display:none;" />
+            <button id="uploadExcelBtn" type="button">📎</button>
+            <span class="file-status" id="fileStatus"></span>
+            <textarea id="message-input" placeholder="输入你的问题..." autocomplete="off"></textarea>
+            <button id="send-button">发送</button>
+        </div>
+    </div>
+
+    <div id="adConfigSidebar">
+        <button id="closeAdConfigSidebar">×</button>
+        <h2>广告参数 JSON</h2>
+        <pre id="adConfigJsonSidebarView"></pre>
+    </div>
+
+    <script>
+        const messageInput = document.getElementById('message-input');
+        const sendButton = document.getElementById('send-button');
+        const chatMessages = document.getElementById('chat-messages');
+        const typingIndicator = document.getElementById('typing-indicator');
+        const fileStatus = document.getElementById('fileStatus');
+        let currentFileId = null;
+        let lastAdConfigJson = null;
+        const showAdConfigBtn = document.getElementById('showAdConfigBtn');
+        const adConfigModal = document.getElementById('adConfigModal');
+        const adConfigJsonView = document.getElementById('adConfigJsonView');
+        document.getElementById('closeAdConfigModal').onclick = () => adConfigModal.style.display = 'none';
+        showAdConfigBtn.onclick = () => {
+            adConfigModal.style.display = 'flex';
+            if (lastAdConfigJson) {
+                let jsonStr = lastAdConfigJson;
+                try {
+                    if (typeof jsonStr !== 'string') {
+                        jsonStr = JSON.stringify(jsonStr, null, 2);
+                    } else {
+                        jsonStr = JSON.stringify(JSON.parse(jsonStr), null, 2);
+                    }
+                } catch (e) {
+                    jsonStr = String(jsonStr);
+                }
+                adConfigJsonView.textContent = jsonStr;
+            }
+        };
+
+        // 配置 marked 选项
+        marked.setOptions({
+            breaks: true,
+            gfm: true,
+            sanitize: false
+        });
+
+        // 检查登录状态
+        async function checkUserStatus() {
+            try {
+                const response = await fetch('/user/status', {
+                    credentials: 'include'
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('user-phone').textContent = `手机号: ${data.phone}`;
+                    document.getElementById('remaining-queries').textContent = ` | 剩余查询次数: ${data.remaining_queries}`;
+                } else {
+                    window.location.href = '/';
+                }
+            } catch (error) {
+                console.error('获取用户状态失败:', error);
+                window.location.href = '/';
+            }
+        }
+
+        // 退出登录
+        async function logout() {
+            try {
+                const response = await fetch('/logout', {
+                    credentials: 'include'
+                });
+                if (response.ok) {
+                    window.location.href = '/';
+                }
+            } catch (error) {
+                console.error('退出登录失败:', error);
+            }
+        }
+
+        // 绑定上传按钮点击事件
+        document.getElementById('uploadExcelBtn').addEventListener('click', () => {
+            document.getElementById('chatExcelFile').click();
+        });
+
+        // 处理文件选择变化
+        document.getElementById('chatExcelFile').addEventListener('change', async function(e) {
+            const fileInput = e.target;
+            if (!fileInput.files.length) {
+                fileStatus.innerText = '';
+                return;
+            }
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            fileStatus.innerText = '正在上传...';
+            sendButton.disabled = true;
+            try {
+                const resp = await fetch('/upload_excelss', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await resp.json();
+                if (data.fileId) {
+                    currentFileId = data.fileId;
+                    fileStatus.innerText = '已上传: ' + (data.fileName || 'Excel文件');
+                } else {
+                    fileStatus.innerText = '上传失败: ' + (data.error || '未知错误');
+                }
+            } catch (err) {
+                fileStatus.innerText = '请求失败: ' + err;
+            } finally {
+                sendButton.disabled = false;
+            }
+        });
+
+        function addMessage(content, isUser = false, adConfigJson = null) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user' : 'assistant'}`;
+            const messageContent = document.createElement('div');
+            messageContent.className = 'message-content';
+            if (isUser) {
+                messageContent.textContent = content;
+            } else {
+                // content只允许为字符串，若为对象则格式化
+                let safeContent = content;
+                if (typeof safeContent !== 'string') {
+                    try {
+                        safeContent = JSON.stringify(safeContent, null, 2);
+                    } catch (e) {
+                        safeContent = String(safeContent);
+                    }
+                }
+                messageContent.innerHTML = marked.parse(safeContent);
+                // 如果有广告参数json，追加美观的json展示和确认按钮
+                if (adConfigJson) {
+                    let jsonStr = adConfigJson;
+                    // 强制格式化为字符串，防止[object Object]
+                    try {
+                        if (typeof jsonStr !== 'string') {
+                            jsonStr = JSON.stringify(jsonStr, null, 2);
+                        } else {
+                            // 尝试parse再stringify，防止后端返回的本身是字符串但内容是[object Object]
+                            jsonStr = JSON.stringify(JSON.parse(jsonStr), null, 2);
+                        }
+                    } catch (e) {
+                        jsonStr = String(jsonStr);
+                    }
+                    const jsonBlock = document.createElement('pre');
+                    jsonBlock.style.background = '#f8f9fa';
+                    jsonBlock.style.padding = '15px';
+                    jsonBlock.style.borderRadius = '8px';
+                    jsonBlock.style.marginTop = '10px';
+                    jsonBlock.style.fontSize = '14px';
+                    jsonBlock.style.overflowX = 'auto';
+                    jsonBlock.textContent = jsonStr;
+                    messageContent.appendChild(jsonBlock);
+                    // 确认按钮
+                    const confirmBtn = document.createElement('button');
+                    confirmBtn.textContent = '确认执行';
+                    confirmBtn.style.marginTop = '10px';
+                    confirmBtn.style.background = '#4a90e2';
+                    confirmBtn.style.color = 'white';
+                    confirmBtn.style.border = 'none';
+                    confirmBtn.style.borderRadius = '5px';
+                    confirmBtn.style.padding = '8px 18px';
+                    confirmBtn.style.cursor = 'pointer';
+                    confirmBtn.onclick = function() {
+                        alert('已执行！');
+                        confirmBtn.disabled = true;
+                        confirmBtn.textContent = '已执行';
+                    };
+                    messageContent.appendChild(confirmBtn);
+                }
+            }
+            messageDiv.appendChild(messageContent);
+            chatMessages.insertBefore(messageDiv, typingIndicator);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        async function sendMessage() {
+            const message = messageInput.value.trim();
+            if (!message) return;
+
+            // 检查剩余查询次数
+            try {
+                const statusResponse = await fetch('/user/status');
+                const statusData = await statusResponse.json();
+                if (statusData.remaining_queries <= 0) {
+                    alert('已达到今日查询限制（100次）');
+                    return;
+                }
+            } catch (error) {
+                console.error('检查查询次数失败:', error);
+                return;
+            }
+
+            // 禁用输入和发送按钮
+            messageInput.disabled = true;
+            sendButton.disabled = true;
+
+            // 添加用户消息
+            addMessage(message, true);
+            messageInput.value = '';
+
+            // 显示输入指示器
+            typingIndicator.style.display = 'block';
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            try {
+                const requestBody = {
+                    message: message,
+                    fileId: currentFileId
+                };
+                const response = await fetch('/chatss', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestBody),
+                });
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let aiResponse = '';
+                let adConfigJsonFound = false;
+                let adConfigJsonForDisplay = null;
+                let lastChunkHadAdConfig = false;
+                while (true) {
+                    const { value, done } = await reader.read();
+                    if (done) break;
+                    const chunk = decoder.decode(value);
+                    const lines = chunk.split('\n');
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            const data = line.slice(6);
+                            if (data === '[DONE]') {
+                                typingIndicator.style.display = 'none';
+                                // 最后一次插入带json的消息
+                                if (adConfigJsonForDisplay) {
+                                    addMessage(aiResponse, false, adConfigJsonForDisplay);
+                                    adConfigJsonForDisplay = null;
+                                    lastChunkHadAdConfig = false;
+                                } else if (aiResponse) {
+                                    addMessage(aiResponse);
+                                }
+                                break;
+                            }
+                            try {
+                                const parsed = JSON.parse(data);
+                                if (parsed.ad_config_json) {
+                                    lastAdConfigJson = parsed.ad_config_json;
+                                    adConfigJsonForDisplay = parsed.ad_config_json;
+                                    showAdConfigBtn.style.display = 'block';
+                                    adConfigJsonFound = true;
+                                    lastChunkHadAdConfig = true;
+                                }
+                                if (parsed.content !== undefined) {
+                                    // content只允许为字符串，若为对象则格式化
+                                    let safeContent = parsed.content;
+                                    if (typeof safeContent !== 'string') {
+                                        try {
+                                            safeContent = JSON.stringify(safeContent, null, 2);
+                                        } catch (e) {
+                                            safeContent = String(safeContent);
+                                        }
+                                    }
+                                    aiResponse += safeContent;
+                                    lastChunkHadAdConfig = false;
+                                }
+                            } catch (e) {
+                                console.error('Error parsing JSON:', e);
+                            }
+                        }
+                    }
+                }
+                if (!adConfigJsonFound) {
+                    showAdConfigBtn.style.display = 'none';
+                    lastAdConfigJson = null;
+                }
+                // 更新剩余查询次数
+                await checkUserStatus();
+            } catch (error) {
+                console.error('Error:', error);
+                addMessage('抱歉，发生了一些错误，请稍后重试。');
+            } finally {
+                // 重新启用输入和发送按钮
+                messageInput.disabled = false;
+                sendButton.disabled = false;
+                messageInput.focus();
+            }
+        }
+
+        // 自动调整文本框高度
+        messageInput.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = (this.scrollHeight) + 'px';
+        });
+
+        sendButton.addEventListener('click', sendMessage);
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        // 页面加载时检查登录状态
+        window.onload = checkUserStatus;
+    </script>
+</body>
+</html> 

@@ -1,0 +1,18 @@
+flask==3.0.2
+flask-cors==4.0.0
+zhipuai==2.0.1
+sseclient-py>=1.7.2 
+requests
+openai
+langchain_core
+httpx[http2]
+pandas
+openpyxl
+langchain-core
+apscheduler
+python-pptx
+flask-sqlalchemy
+flask-login
+werkzeug
+xlrd >= 2.0.1
+pymysql
