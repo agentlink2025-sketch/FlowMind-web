@@ -301,24 +301,41 @@ def register():
     if not phone.isdigit() or len(phone) != 11:
         return jsonify({'error': '无效的手机号格式'}), 400
     
-    # 检查用户是否已存在（同时检查SQLite和MySQL）
-    if User.query.filter_by(phone=phone).first() or MySQLUser.query.filter_by(phone=phone).first():
+    # 先检查SQLite是否已存在
+    if User.query.filter_by(phone=phone).first():
         return jsonify({'error': '该手机号已注册'}), 400
     
-    # 创建新用户
+    # 再尝试检查MySQL是否已存在（若MySQL不可用，不阻塞注册）
+    mysql_available = True
+    try:
+        if MySQLUser.query.filter_by(phone=phone).first():
+            return jsonify({'error': '该手机号已注册'}), 400
+    except Exception as e:
+        print(f"MySQL 可用性检查失败，跳过MySQL重复性校验: {str(e)}")
+        mysql_available = False
+    
+    # 创建新用户（先在SQLite中创建，确保注册不受MySQL影响）
     user = User(phone=phone)
     user.set_password(password)
-    mysql_user = MySQLUser(phone=phone, password_hash=user.password_hash, daily_queries=0, last_query_date=datetime.now().date())
     try:
+        # 先提交到SQLite
         db.session.add(user)
-        db.session.flush()  # 先写入SQLite，获取id
-        mysql_user.id = user.id  # 保持两边id一致
-        db.session.add(mysql_user)
         db.session.commit()
-        return jsonify({'message': '注册成功'}), 201
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': '注册失败'}), 500
+    
+    # 同步到MySQL（可选，不影响注册结果）
+    if mysql_available:
+        try:
+            mysql_user = MySQLUser(id=user.id, phone=phone, password_hash=user.password_hash, daily_queries=0, last_query_date=datetime.now().date())
+            db.session.add(mysql_user)
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            print(f"MySQL 同步用户失败（不影响注册完成）: {str(e)}")
+    
+    return jsonify({'message': '注册成功'}), 201
 
 @app.route('/login', methods=['POST'])
 def login():
@@ -1055,7 +1072,7 @@ def handle_analysis_intent(text, file_data=None):
     低效维度（CPA高于均值5%）：
     年龄：31-40岁（CPA=129.61，相对CPA=1.30）
     年龄细分：36-40岁（CPA=128.04，相对CPA=1.24）、24-30岁（CPA=109.74，相对CPA=1.06）
-    设备平台：Android（CPA=130.38，相对CPA=1.18）”
+    设备平台：Android（CPA=130.38，相对CPA=1.18）"
 
 
 要求：
@@ -1067,7 +1084,7 @@ def handle_analysis_intent(text, file_data=None):
 6. 百分比必须精确到小数点后2位
 7. 重要指标必须单独列出并加粗
 8. 确保所有数据完整展示，不要使用省略号
-9. 避免出现“原报告”字样，提示词中的原报告对客户不可见
+9. 避免出现"原报告"字样，提示词中的原报告对客户不可见
 """
 
             
