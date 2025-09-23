@@ -30,20 +30,13 @@ app = Flask(__name__)
 CORS(app, supports_credentials=True)
 
 # MySQL数据库配置（用于问答记录）
-# MYSQL_CONFIG = {
-#     'host': os.getenv('MYSQL_HOST', 'qa-db-mysql.ns-vt6egrji.svc'),
-#     'user': os.getenv('MYSQL_USER', 'root'),
-#     'password': os.getenv('MYSQL_PASSWORD', 'brhtwzvm'),
-#     'database': os.getenv('MYSQL_DATABASE', 'qa_db')
-# }
-
-
 MYSQL_CONFIG = {
     'host': os.getenv('MYSQL_HOST', 'qa-db-mysql.ns-rlnc5x3h.svc'),
     'user': os.getenv('MYSQL_USER', 'root'),
     'password': os.getenv('MYSQL_PASSWORD', 'lmlqxrz9'),
     'database': os.getenv('MYSQL_DATABASE', 'qa_db')
 }
+
 
 # 构建MySQL数据库URI
 MYSQL_DATABASE_URI = f"mysql+pymysql://{MYSQL_CONFIG['user']}:{MYSQL_CONFIG['password']}@{MYSQL_CONFIG['host']}/{MYSQL_CONFIG['database']}"
@@ -875,21 +868,6 @@ def handle_analysis_intent(text, file_data=None):
 数据特征：{df.columns.tolist()}
 数据样例：{df.head(3).to_dict()}
 数据形状：{df.shape}
-
-客户8月投放数据结论：高效维度（CPA低于均值5%）：
-设备平台：iOS（CPA=90.36，相对CPA=0.82）
-网络环境：其他（CPA=89.04，相对CPA=0.47）、WIFI（CPA=108.38，相对CPA=0.57）
-性别：男（CPA=116.04，相对CPA=0.89）
- 低效维度（CPA高于均值5%）：
-省份：北京（CPA=116.14，相对CPA=1.91）
-年龄：31-40岁（CPA=129.61，相对CPA=1.30）、36-40岁（CPA=128.04，相对CPA=1.28）、24-30岁（CPA=109.74，相对CPA=1.10）
-年龄细分：36-40岁（CPA=128.04，相对CPA=1.24）、24-30岁（CPA=109.74，相对CPA=1.06）
-设备平台：Android（CPA=130.38，相对CPA=1.18）
- 关键洞察：
-iOS用户比Android用户转化成本更低
-WIFI环境和其他网络表现较好
-北京地区投放效果最差，需要重点优化
-31-40岁和36-40岁年龄段成本较高，需要调整策略
 
 用户需求：{text}
 
