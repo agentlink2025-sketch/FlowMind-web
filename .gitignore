@@ -1,23 +1,106 @@
-# =========================
-# VS Code
-# =========================
-.vscode/
-*.code-workspace
-
-# =========================
-# Python
-# =========================
+# Python 相关
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
-*.pdb
-*.log
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
 
-# =========================
-# Virtual Environments
-# =========================
-env/
+# 虚拟环境
+myprojectenv/
+myprojectenv1/
 venv/
+env/
 ENV/
+.env/
 .venv/
+
+# IDE 文件
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 数据库文件
+instance/main.db
+*.db
+*.sqlite3
+
+# 日志文件
+*.log
+logs/
+
+# 操作系统文件
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# 配置文件（但通常需要保留，这里只是示例）
+# pyvenv.cfg
+
+# 测试相关
+.coverage
+.pytest_cache/
+tox.ini
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+
+# 包安装相关
+pip-wheel-metadata/
+pip-delete-this-directory.txt
+
+# 单元测试和代码检查
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+.pytest_cache/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# 环境变量文件
+.env.local
+.env.*.local
+
+
+# 虚拟环境的 bin 目录
+bin/
+
+# 上传文件目录
+uploads/
+
+# 数据文件
+user_data.txt
+chat_records.txt
+*.txt
